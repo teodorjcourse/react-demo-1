@@ -3,4 +3,7 @@ var React = require('react');
 
 var Application = require('./app.js');
 
-React.renderComponent(<Application />, document.body);
+Application.getDataForPath(location.pathname, function() {
+  React.renderComponent(<Application path={location.pathname} />,
+      document.getElementById('main'));
+});

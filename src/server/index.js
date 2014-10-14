@@ -6,7 +6,6 @@ var fs = require('fs');
 var url = require('url');
 var React = require('react');
 
-
 const CLIENT = path.resolve(__dirname, '../client');
 const CLIENT_SRC = path.resolve(__dirname, '../client/src');
 const BUILD = path.resolve(__dirname, '../../build');
@@ -17,7 +16,7 @@ app.use(griddle(CLIENT, CLIENT_SRC));
 app.use(express.static(BUILD));
 
 app.use(function(req, res, next) {
-  var App = require(path.resolve(BUILD, 'app.js'));
+  var Application = require(path.resolve(BUILD, 'app.js'));
   var p = url.parse(req.url).pathname;
 
   // TODO: Figure out the paths we specifically want to handle by delivering
@@ -27,13 +26,15 @@ app.use(function(req, res, next) {
 
     // TODO: Fetch the template once, instead of fetching it every time.
     fs.readFile(path.resolve(BUILD, 'layout.html'), function(err, content) {
-      // TODO: Cache template compliation
-      res.send(
-          content.toString().replace(
-            '{%CONTENT%}',
-            new App(p)
-          )
-        );
+      Application.getDataForPath(p, function(err) {
+        if(!err) {
+          m = React.renderComponentToString(Application({ path: p }));
+          res.send(content.toString().replace('{%CONTENT%}', m));
+        } else {
+          // TODO: What do we do with this?
+          throw err;
+        }
+      });
     });
   } else {
     next();
