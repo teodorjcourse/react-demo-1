@@ -11,7 +11,7 @@ var QuestionAnswer = React.createClass({
   render: function() {
     return (
       <div>
-        <span ref="answer">{this.state.answer}</span>
+        <span>{this.state.answer}</span>
         <p><Link href="/">Back</Link></p>
       </div>
     );

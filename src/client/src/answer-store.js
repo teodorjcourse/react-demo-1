@@ -5,13 +5,24 @@ var xhr = require('xhr');
 
 var answers = {};
 
+function qid(question) {
+  var hash = 0, i, chr, len;
+  if(question.length == 0) return hash;
+  for(i = 0, len = question.length; i < len; i++) {
+    chr   = question.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+}
+
 function getSelectedAnswerFromResponse(response) {
   var selected;
   if(response && response.success && Array.isArray(response.success.answers) &&
       response.success.answers.length > 0
   ) {
     response.success.answers.sort(function(a, b) {
-      return a.confidence < b.confidence;
+      return b.confidence - a.confidence;
     });
     selected = response.success.answers[0].text;
     response.success.expanded.expansions.every(function(e) {
@@ -47,9 +58,7 @@ function fetchAnswer(question, cb) {
         if(selected) {
           // Store the answer so that it can be retrieved again with an XHR
           // request.
-          // TODO: More advanced implementations may have some concept of freshness here.
-          // IE, on S2 when would the query-cache be invalidated...etc
-          answers[question] = selected;
+          answers[qid(question)] = selected;
           cb(false, selected);
         } else {
           cb('No selected answer');
@@ -58,16 +67,33 @@ function fetchAnswer(question, cb) {
     }.bind(this));
 }
 
-function AnswerStore() {}
+function AnswerStore() {
+  answers = this.getAnswersFetchedByServer();
+};
 util.inherits(AnswerStore, EventEmitter);
 
 AnswerStore.prototype.answer = function(question) {
-  return answers[question];
+  question = decodeURIComponent(question);
+  return answers[qid(question)];
+};
+
+AnswerStore.prototype.getAnswersFetchedByServer = function() {
+  var a;
+  if(typeof window !== 'undefined' && window.answers) {
+    a = JSON.parse(window.answers);
+    delete window.answers;
+  }
+  return a || {};
+};
+
+AnswerStore.prototype.exportData = function() {
+  return '<script>window.answers = \'' + JSON.stringify(answers) + '\';</script>';
 };
 
 AnswerStore.prototype.fetchAnswer = function(question, cb) {
+  question = decodeURIComponent(question);
   if(answers.hasOwnProperty(question)) {
-    cb(false, answers[question]);
+    cb(false, answers[qid(question)]);
   } else {
     fetchAnswer(question, function(err, answer) {
       if(!err) {

@@ -1,8 +1,7 @@
 /** @jsx React.DOM */
 var React = require('react');
 
-// TODO: This component is very broken.  We'd nee dto implement our own routing
-// mechanism.
+// TODO: This router isn't a great solution and should be replaced
 var Router = require('react-router-component');
 var Locations = Router.Locations;
 var Location = Router.Location;
@@ -20,13 +19,14 @@ var Application = React.createClass({
   askQuestion: function(question) {
     var path = '/answer/' + encodeURIComponent(question);
     this.setState({ asking: true });
-    Application.getDataForPath(path, function(err) {
+    AnswerStore.fetchAnswer(question, function(err, answer) {
       if(!err) {
         this.setState({ asking: false });
 
         // TODO: again, kind of a weird pattern here (for now).  Really we
-        // should express the intent to get an answer by updating the route
-        // wait for the answer and then render.
+        // should express the intent to get an answer by updating the route.
+        // This would dispatch an action "ASK_QUESTION" and delay rendering
+        // until the answer was delivered (client AND server)
         this.refs.router.navigate(path);
       } else {
         this.setState({ asking: false, error: true });
@@ -53,47 +53,5 @@ var Application = React.createClass({
     );
   }
 });
-
-// TODO: This should really be baked into resolution of a route but that'd
-// require development of a routing mechanism (react-router-component isn't that
-// great an ultimately kind of an anti-pattern).
-Application.Route = {
-  '/': {
-    name: 'home',
-    // Home has no data
-    resolver: undefined
-  },
-  '/answer/:question': {
-    name: 'answer',
-    // TODO: really we could have several resolvers...but for now to make it
-    // simple let's just do wone.  Furthermore the dispatcher pattern has a solution
-    // for this with waitFor()
-    resolver: AnswerStore.fetchAnswer.bind(AnswerStore)
-  }
-};
-
-var routes = Object.keys(Application.Route).map(function(r) {
-  return {
-    route: Application.Route[r],
-    exp: new RegExp('^' + r.replace(/\//g, '\\/').replace(/:[^/]*/, '([^/]*)') + '$')
-  };
-});
-
-Application.getDataForPath = function(path, cb) {
-  var resolver;
-  var matches
-  routes.every(function(cr) {
-    if(matches = cr.exp.exec(path)) {
-      resolver = cr.route.resolver;
-      return false;
-    }
-    return true;
-  });
-  if(typeof resolver === 'function') {
-    resolver.apply(undefined, [ matches.slice(1) ].concat(cb));
-  } else {
-    cb();
-  }
-};
 
 module.exports = Application;
