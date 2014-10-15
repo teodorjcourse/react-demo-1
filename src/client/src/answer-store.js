@@ -3,6 +3,8 @@ var util = require('util');
 var request = require('request');
 var xhr = require('xhr');
 
+var config = require('./config');
+
 var answers = {};
 
 function qid(question) {
@@ -43,7 +45,7 @@ function fetchAnswer(question, cb) {
 
   fn({
       method: 'POST',
-      url: 'http://ari.dev.allenai.org:8080/ask',
+      url: config.API_URL,
       timeout: 10000,
       json: {
         config: { ari: { handler: { tf: { solvers: [ "inference" ] } } } },
