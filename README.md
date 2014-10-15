@@ -26,7 +26,7 @@ bin/server start
 
 Navigate to [http://localhost:4000](http://localhost:4000) and start hacking away.
 
-Client-side code is automatically rebuild using [Griddle](http://github.com/allenai/griddle), but you'll have to restart the server after JSX changes for server-side rendering to work correctly.
+Client-side code is automatically rebuilt using [Griddle](http://github.com/allenai/griddle), but you'll have to restart the server after JSX changes for server-side rendering to work correctly.
 
 ## Known Issues
 
